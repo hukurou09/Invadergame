@@ -1,3 +1,0 @@
-[build]
-  publish = "build/web"
-  command = "echo 'No build command needed'"
