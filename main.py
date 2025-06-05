@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 import os
+import asyncio
 
 # ゲームの初期化
 pygame.init()
@@ -11,6 +12,12 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("インベーダーゲーム")
+# icon = pygame.image.load("icon.png")
+# pygame.display.set_icon(icon)
+
+# 背景画像の読み込みとスケーリング
+background_image = pygame.image.load("background_space.jpg")
+background_image_scaled = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # 色の定義
 BLACK = (0, 0, 0)
@@ -86,6 +93,7 @@ class Enemy(pygame.sprite.Sprite):
 # ゲームクラス
 class Game:
     def __init__(self):
+        self.running = True # Flag to control the game loop
         self.player = Player()
         self.all_sprites = pygame.sprite.Group()
         self.all_sprites.add(self.player)
@@ -107,15 +115,14 @@ class Game:
     def process_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return False
+                self.running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
                     self.player.shoot()
                 elif event.key == pygame.K_ESCAPE:
-                    return False
+                    self.running = False
                 elif event.key == pygame.K_r and self.game_over:
                     self.__init__()  # ゲームをリセット
-        return True
 
     def run_logic(self):
         if not self.game_over:
@@ -148,7 +155,8 @@ class Game:
                 self.create_enemies()
 
     def display_frame(self):
-        screen.fill(BLACK)
+        # screen.fill(BLACK) # 元の背景塗りつぶしをコメントアウトまたは削除
+        screen.blit(background_image_scaled, (0, 0)) # 背景画像を描画
         
         if not self.game_over:
             self.all_sprites.draw(screen)
@@ -166,20 +174,22 @@ class Game:
         
         pygame.display.flip()
 
-    def run(self):
-        running = True
-        while running:
-            running = self.process_events()
-            self.run_logic()
-            self.display_frame()
-            self.clock.tick(60)  # 60FPS
+    # The Game.run() method is no longer the primary loop driver for async version.
+    # It can be removed or adapted if needed for other purposes, but for now, we'll bypass it.
 
 # メイン関数
-def main():
+async def main():
     game = Game()
-    game.run()
+    while game.running:
+        game.process_events()
+        if not game.running: # Check flag after processing events
+            break
+        game.run_logic()
+        game.display_frame() # pygame.display.flip() is in here
+        await asyncio.sleep(0) # Crucial for Pygbag
+
     pygame.quit()
-    sys.exit()
+    sys.exit() # Ensure sys.exit is called
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
